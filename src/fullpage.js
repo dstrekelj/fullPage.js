@@ -1173,6 +1173,11 @@
             return direction;
         }
 
+        // @see https://github.com/alvarotrigo/fullPage.js/issues/941#issuecomment-391834802
+        // Added lines to prevent early section scrolling : variables
+        var lastScrollTime = 0;
+        var scrollTimeDelay = 250;
+
         /**
         * Determines the way of scrolling up or down:
         * by 'automatically' scrolling a section or by using the default and normal scrolling.
@@ -1185,15 +1190,24 @@
             var scrollSection = (type === 'down') ? moveSectionDown : moveSectionUp;
 
             if(options.scrollOverflow){
-                var scrollable = options.scrollOverflowHandler.scrollable($(SECTION_ACTIVE_SEL)[0]);
+                var scrollable = options.scrollOverflowHandler.scrollable($(SECTION_ACTIVE_SEL));
                 var check = (type === 'down') ? 'bottom' : 'top';
 
-                if(scrollable != null ){
+                // Added lines to prevent early section scrolling : get the scroll interval
+                var currentScrollTime = new Date().getTime();
+                var lastScrollTimeDiff = currentScrollTime - lastScrollTime;
+                lastScrollTime = currentScrollTime;
+
+                if(scrollable.length > 0 ){
                     //is the scrollbar at the start/end of the scroll?
                     if(options.scrollOverflowHandler.isScrolled(check, scrollable)){
-                        scrollSection();
+                        if (lastScrollTimeDiff>scrollTimeDelay) {
+                            scrollSection();
+                        }
                     }else{
-                        return true;
+                        if (lastScrollTimeDiff>scrollTimeDelay) {
+                            return true;
+                        }
                     }
                 }else{
                     // moved up/down
