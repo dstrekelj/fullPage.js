@@ -1048,35 +1048,50 @@
             return direction;
         }
 
+        // @see https://github.com/alvarotrigo/fullPage.js/issues/941#issuecomment-391834802
+        // Added lines to prevent early section scrolling : variables
+        var lastScrollTime = 0;                                           /* <-- added */
+        var scrollTimeDelay = 250;                                        /* <-- added */
+
         /**
         * Determines the way of scrolling up or down:
         * by 'automatically' scrolling a section or by using the default and normal scrolling.
         */
-        function scrolling(type){
+       function scrolling(type){
             if (!isScrollAllowed.m[type]){
                 return;
             }
 
             var scrollSection = (type === 'down') ? moveSectionDown : moveSectionUp;
 
-            if(options.scrollOverflow){
+            if (options.scrollOverflow) {
                 var scrollable = options.scrollOverflowHandler.scrollable($(SECTION_ACTIVE_SEL));
                 var check = (type === 'down') ? 'bottom' : 'top';
 
-                if(scrollable.length > 0 ){
+                // Added lines to prevent early section scrolling : get the scroll interval
+                var currentScrollTime = new Date().getTime();                  /* <-- added */
+                var lastScrollTimeDiff = currentScrollTime - lastScrollTime;   /* <-- added */
+                lastScrollTime = currentScrollTime;                            /* <-- added */
+
+                if (scrollable.length > 0) {
                     //is the scrollbar at the start/end of the scroll?
-                    if(options.scrollOverflowHandler.isScrolled(check, scrollable)){
-                        scrollSection();
-                    }else{
+                    if (options.scrollOverflowHandler.isScrolled(check, scrollable)) {
+                        if (lastScrollTimeDiff>scrollTimeDelay) {                /* <-- added */
+                            scrollSection();
+                        }                                                        /* <-- added */
+                    } else {
                         return true;
                     }
-                }else{
+                } else {
                     // moved up/down
-                    scrollSection();
+                    if (lastScrollTimeDiff>scrollTimeDelay) {                   /* <-- added */
+                        scrollSection();
+                    }                                                           /* <-- added */
                 }
-            }else{
+            } else {
                 // moved up/down
-                scrollSection();
+                // Add IF here too when delay is needed and scrollOverflow : false
+                scrollSection(); 
             }
         }
 
